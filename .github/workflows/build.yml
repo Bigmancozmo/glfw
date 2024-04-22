@@ -48,14 +48,30 @@ jobs:
             - name: Build Wayland+X11 shared library
               run: cmake --build build-full-shared --parallel
 
-            # Step to create release
+            # Package the built libraries
+            - name: Package Libraries
+              run: |
+                  zip -r libraries.zip build-null-shared build-x11-shared build-wayland-shared build-full-static build-full-shared
+
+            # Create release
             - name: Create Release
               id: create_release
               uses: actions/create-release@v1
               env:
-                GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                 tag_name: linux-nightly
                 release_name: Linux Nightly
                 draft: false
                 prerelease: false
+
+            # Upload release asset
+            - name: Upload Release Asset
+              uses: actions/upload-release-asset@v1
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                upload_url: ${{ steps.create_release.outputs.upload_url }}
+                asset_path: ./libraries.zip
+                asset_name: libraries.zip
+                asset_content_type: application/zip
